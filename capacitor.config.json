@@ -1,0 +1,9 @@
+{
+  "appId": "app.turnleaf.reader",
+  "appName": "Turnleaf",
+  "webDir": "www",
+  "backgroundColor": "#1a1510",
+  "android": {
+    "backgroundColor": "#1a1510"
+  }
+}

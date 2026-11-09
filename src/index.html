@@ -1,0 +1,1310 @@
+<title>Turnleaf</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
+<script>
+  /* Apply the saved reading mode before first paint. First visit follows the viewer's light or dark setting. */
+  try {
+    var __m = localStorage.getItem('turnleaf:mode');
+    if (!__m && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) __m = 'day';
+    if (__m) document.documentElement.setAttribute('data-mode', __m);
+  } catch (e) {}
+</script>
+<style>
+  /* Layout: a reading desk. Slim header, the book fills the stage, one thin control bar below.
+     Full screen drops the chrome so the book fills the screen. Four reading modes retint desk and paper. */
+  :root {
+    color-scheme: dark;
+    /* Lamp (default) */
+    --desk: #1a1510;
+    --lamp: rgba(255, 190, 110, 0.20);
+    --vig: rgba(0, 0, 0, 0.7);
+    --ink: #f0e7d6;
+    --muted: #ab9e88;
+    --brass: #d4a55d;
+    --brass-ink: #24190d;
+    --line: rgba(255, 233, 196, 0.14);
+    --panel: rgba(34, 27, 20, 0.78);
+    --menu: rgba(30, 23, 17, 0.97);
+    --active: rgba(60, 46, 30, 0.9);
+    --toast: rgba(20, 15, 10, 0.94);
+    --scrim: rgba(18, 13, 8, 0.86);
+    --shadow: rgba(0, 0, 0, 0.65);
+    --paper: #f6f1e4;
+    --ph: #a39a86;
+    --tone: brightness(1);
+    --inkf: brightness(1);
+    --gut-a: rgba(45, 30, 10, 0.24);
+    --gut-b: rgba(45, 30, 10, 0.07);
+    --display: "Literata", Georgia, "Times New Roman", serif;
+    --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :root[data-mode="day"] {
+    color-scheme: light;
+    --desk: #d8d1c3;
+    --lamp: rgba(255, 255, 255, 0.55);
+    --vig: rgba(80, 60, 30, 0.28);
+    --ink: #2a2218;
+    --muted: #6c6150;
+    --brass: #8a5a14;
+    --brass-ink: #fff8ec;
+    --line: rgba(60, 40, 10, 0.2);
+    --panel: rgba(255, 251, 242, 0.85);
+    --menu: rgba(255, 252, 246, 0.98);
+    --active: #ebe1cd;
+    --toast: rgba(255, 251, 242, 0.97);
+    --scrim: rgba(232, 225, 210, 0.92);
+    --shadow: rgba(60, 40, 15, 0.45);
+    --paper: #fbf8f0;
+  }
+  :root[data-mode="sepia"] {
+    color-scheme: dark;
+    --desk: #3b2d1e;
+    --lamp: rgba(255, 200, 130, 0.16);
+    --vig: rgba(0, 0, 0, 0.55);
+    --ink: #f3e4c8;
+    --muted: #c1a982;
+    --brass: #e0b266;
+    --brass-ink: #2a1c0b;
+    --line: rgba(255, 226, 170, 0.18);
+    --panel: rgba(55, 40, 25, 0.8);
+    --menu: rgba(48, 35, 22, 0.97);
+    --active: rgba(80, 60, 38, 0.9);
+    --toast: rgba(34, 24, 14, 0.95);
+    --scrim: rgba(30, 21, 12, 0.88);
+    --paper: #efdfbd;
+    --ph: #9b8a67;
+    --tone: brightness(0.98);
+  }
+  :root[data-mode="night"] {
+    color-scheme: dark;
+    --desk: #0a0908;
+    --lamp: rgba(255, 170, 90, 0.05);
+    --vig: rgba(0, 0, 0, 0.8);
+    --ink: #d9d1c3;
+    --muted: #8a8172;
+    --brass: #c99a52;
+    --brass-ink: #1b1209;
+    --line: rgba(255, 236, 200, 0.12);
+    --panel: rgba(20, 18, 15, 0.88);
+    --menu: rgba(18, 16, 13, 0.98);
+    --active: rgba(45, 38, 30, 0.95);
+    --toast: rgba(12, 10, 8, 0.96);
+    --scrim: rgba(6, 5, 4, 0.92);
+    --shadow: rgba(0, 0, 0, 0.8);
+    --paper: #14130f;
+    --ph: #5d5749;
+    --tone: invert(0.93) hue-rotate(180deg) brightness(0.9) contrast(0.95);
+    --gut-a: rgba(0, 0, 0, 0.55);
+    --gut-b: rgba(0, 0, 0, 0.2);
+  }
+
+  /* text color: black text on the page is mapped to a blue ink */
+  html[data-ink="navy"] { --inkf: url(#inkNavy); }
+  html[data-ink="blue"] { --inkf: url(#inkBlue); }
+  html[data-ink="navy"][data-mode="night"] { --inkf: url(#inkNavyNight); }
+  html[data-ink="blue"][data-mode="night"] { --inkf: url(#inkBlueNight); }
+
+  /* sepia tints the paper by multiplying it with a cream page, so a blue ink keeps its color */
+  :root[data-mode="sepia"] .page .pimg { mix-blend-mode: multiply; }
+
+  html, body { height: 100%; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-block: 10px 12px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overflow: hidden;
+    color: var(--ink);
+    font: 400 14px/1.4 var(--ui);
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .75 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(70% 55% at 50% 36%, var(--lamp), transparent 72%),
+      radial-gradient(130% 80% at 50% 125%, var(--vig), transparent 60%),
+      var(--desk);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .top { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+  .brand { font: 600 21px/1 var(--display); letter-spacing: 0.01em; color: var(--ink); }
+  .file { flex: 1; min-width: 0; text-align: center; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .actions { display: flex; align-items: center; gap: 8px; }
+
+  .icon {
+    width: 40px; height: 40px; flex: none;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .icon:hover { border-color: var(--brass); }
+  .icon:active { background: var(--active); }
+  .icon svg, .btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .primary {
+    height: 40px; padding: 0 18px;
+    border: 0; border-radius: 20px;
+    background: var(--brass); color: var(--brass-ink);
+    font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .primary:hover { filter: brightness(1.08); }
+
+  .stage { flex: 1 1 0; min-height: 0; display: flex; overflow: hidden; scrollbar-width: none; }
+  .stage::-webkit-scrollbar { display: none; }
+  .frame { position: relative; flex: none; margin: auto; }
+  html[data-zoomed] .stage { overflow: auto; cursor: grab; overscroll-behavior: contain; }
+  html[data-zoomed] .stage.panning { cursor: grabbing; }
+  html[data-zoomed] .frame::after { display: none; }
+  html[data-zoomed] .stf__parent { touch-action: auto; }
+  .frame::after {
+    content: ""; position: absolute; left: 3%; right: 3%; bottom: -16px; height: 30px; z-index: -1;
+    background: radial-gradient(ellipse at center, var(--shadow), transparent 70%);
+    filter: blur(9px);
+  }
+  .book { width: 100%; height: 100%; }
+
+  /* page-flip engine base rules */
+  .stf__parent { position: relative; display: block; box-sizing: border-box; transform: translateZ(0); touch-action: none; -webkit-tap-highlight-color: transparent; }
+  .stf__block { position: absolute; width: 100%; height: 100%; box-sizing: border-box; perspective: 2000px; }
+  .stf__item { display: none; position: absolute; transform-style: preserve-3d; }
+  .stf__outerShadow, .stf__innerShadow, .stf__hardShadow, .stf__hardInnerShadow { position: absolute; left: 0; top: 0; }
+
+  /* the paper itself */
+  .page { background: var(--paper); overflow: hidden; }
+  .page .pimg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; background: #fff; filter: var(--tone) var(--inkf); opacity: 0; transition: opacity .25s; -webkit-user-drag: none; pointer-events: none; }
+  .page.cover .pimg { filter: none; }
+  .page.ready .pimg { opacity: 1; }
+  .page::before { content: attr(data-n); position: absolute; inset: 0; display: grid; place-items: center; font: 500 14px var(--ui); letter-spacing: 0.1em; color: var(--ph); }
+  .page.ready::before { display: none; }
+  .page::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+  .page.--left::after { background: linear-gradient(to left, var(--gut-a), transparent 9%), linear-gradient(to right, var(--gut-b), transparent 4%); }
+  .page.--right::after { background: linear-gradient(to right, var(--gut-a), transparent 9%), linear-gradient(to left, var(--gut-b), transparent 4%); }
+
+  .hint { margin: 0; text-align: center; color: var(--muted); font-size: 13px; min-height: 18px; }
+  .bar { display: flex; align-items: center; gap: 12px; }
+  .scrub { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .pg { text-align: center; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 13px; letter-spacing: 0.02em; }
+  input[type="range"] { width: 100%; margin: 0; height: 24px; accent-color: var(--brass); cursor: pointer; background: transparent; }
+
+  /* full screen: the chrome goes away and the book fills the screen */
+  html[data-immersive] body {
+    gap: 0; padding-block: 0;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  html[data-immersive] .top, html[data-immersive] .hint, html[data-immersive] .bar { display: none; }
+  .float {
+    position: fixed; z-index: 15;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    display: flex; align-items: center; gap: 8px;
+    transition: opacity .3s;
+  }
+  .float.idle { opacity: 0; pointer-events: none; }
+  .pill {
+    padding: 8px 14px; border-radius: 20px;
+    background: var(--panel); border: 1px solid var(--line);
+    font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+
+  /* view options */
+  .menu {
+    position: fixed; z-index: 25;
+    top: calc(60px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    width: min(340px, calc(100vw - 24px)); box-sizing: border-box;
+    padding: 16px; display: flex; flex-direction: column; gap: 16px;
+    border-radius: 16px; background: var(--menu); border: 1px solid var(--line);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  }
+  .row { display: flex; flex-direction: column; gap: 7px; }
+  .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+  .seg { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; }
+  .seg button { flex: 1; min-width: 0; height: 34px; padding: 0 6px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .seg button[aria-pressed="true"] { background: var(--brass); color: var(--brass-ink); font-weight: 600; }
+  .dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; border: 1px solid var(--line); vertical-align: -1px; }
+  .pair { display: flex; align-items: center; gap: 8px; }
+  .btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--brass); }
+  .btn svg { width: 18px; height: 18px; }
+  .rotread { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn:disabled:hover { border-color: var(--line); }
+  .status { flex: 1; min-width: 0; text-align: right; font-size: 12px; color: var(--muted); }
+  .sw { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .sw .track { position: relative; width: 38px; height: 22px; border-radius: 11px; background: var(--line); transition: background .15s; }
+  .sw .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); transition: transform .15s; }
+  .sw[aria-pressed="true"] .track { background: var(--brass); }
+  .sw[aria-pressed="true"] .track::after { transform: translateX(16px); background: var(--brass-ink); }
+  .keys { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    max-width: min(90vw, 420px);
+    padding: 10px 16px; border-radius: 12px;
+    background: var(--toast); border: 1px solid var(--line);
+    color: var(--ink); text-align: center; z-index: 20;
+  }
+  .drop {
+    position: fixed; inset: 0; z-index: 30;
+    display: grid; place-items: center;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    background: var(--scrim);
+    font: 600 26px/1.3 var(--display); color: var(--brass); text-align: center;
+  }
+  .drop span { padding: 40px 48px; border: 2px dashed var(--brass); border-radius: 18px; }
+
+  @media (max-width: 440px) {
+    .long { display: none; }
+    .actions { gap: 6px; }
+    .top { gap: 8px; }
+  }
+  @media (max-width: 520px) {
+    .brand { font-size: 18px; }
+    .primary { padding: 0 14px; }
+    .hint { font-size: 12px; }
+  }
+</style>
+
+<header class="top">
+  <div class="brand">Turnleaf</div>
+  <div class="file" id="file">Sample book</div>
+  <div class="actions">
+    <button class="icon" id="rotBtn" type="button" aria-label="Rotate pages clockwise" title="Rotate pages">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
+    <button class="icon" id="fsBtn" type="button" aria-label="Full screen" title="Full screen (F)">
+      <svg id="fsExpand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      <svg id="fsCompress" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+    </button>
+    <button class="icon" id="viewBtn" type="button" aria-label="View options" aria-expanded="false" aria-controls="menu" title="View options">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
+    </button>
+    <button class="primary" id="openBtn" type="button">Open<span class="long"> PDF</span></button>
+  </div>
+</header>
+
+<main class="stage" id="stage"><div class="frame" id="frame"></div></main>
+
+<p class="hint" id="hint">Drag a page corner, tap the outer edge, or press the arrow keys.</p>
+
+<footer class="bar">
+  <button class="icon" id="prev" type="button" aria-label="Previous page" title="Previous page">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>
+  </button>
+  <div class="scrub">
+    <label class="pg" id="pg" for="slider">Page 1 of 8</label>
+    <input type="range" id="slider" min="1" max="8" value="1" step="1">
+  </div>
+  <button class="icon" id="next" type="button" aria-label="Next page" title="Next page">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
+  </button>
+</footer>
+
+<div class="float idle" id="float" hidden>
+  <span class="pill" id="fpg">Page 1 of 8</span>
+  <button class="icon" id="viewBtn2" type="button" aria-label="View options" aria-expanded="false" aria-controls="menu" title="View options">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
+  </button>
+  <button class="icon" id="exitBtn" type="button" aria-label="Exit full screen" title="Exit full screen (Esc)">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+  </button>
+</div>
+
+<section class="menu" id="menu" role="dialog" aria-label="View options" hidden>
+  <div class="row">
+    <span class="lbl">Reading mode</span>
+    <div class="seg" id="modeSeg">
+      <button type="button" data-mode="day" aria-pressed="false"><span class="dot" style="background:#e6dfd0"></span>Day</button>
+      <button type="button" data-mode="lamp" aria-pressed="true"><span class="dot" style="background:#2a2018"></span>Lamp</button>
+      <button type="button" data-mode="sepia" aria-pressed="false"><span class="dot" style="background:#cfae7c"></span>Sepia</button>
+      <button type="button" data-mode="night" aria-pressed="false"><span class="dot" style="background:#0a0908"></span>Night</button>
+    </div>
+  </div>
+  <div class="row">
+    <span class="lbl">Rotate pages</span>
+    <div class="pair">
+      <button class="btn" id="rotL" type="button" aria-label="Rotate pages left">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Left
+      </button>
+      <button class="btn" id="rotR" type="button" aria-label="Rotate pages right">
+        Right<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+      <span class="rotread" id="rotRead" aria-live="polite">0&deg;</span>
+    </div>
+  </div>
+  <div class="row">
+    <span class="lbl">Zoom</span>
+    <div class="pair">
+      <button class="btn" id="zOut" type="button" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2M8 11h6"/></svg></button>
+      <button class="btn" id="zRead" type="button" aria-label="Reset zoom" title="Reset zoom">100%</button>
+      <button class="btn" id="zIn" type="button" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2M8 11h6M11 8v6"/></svg></button>
+    </div>
+  </div>
+  <div class="row">
+    <span class="lbl">Text color</span>
+    <div class="seg" id="inkSeg">
+      <button type="button" data-ink="off" aria-pressed="true">Original</button>
+      <button type="button" data-ink="navy" aria-pressed="false"><span class="dot" style="background:#14308a"></span>Navy</button>
+      <button type="button" data-ink="blue" aria-pressed="false"><span class="dot" style="background:#1456e0"></span>Blue</button>
+    </div>
+    <p class="keys">Recolors the black text of the page. Photos in a PDF pick up a blue tint.</p>
+  </div>
+  <div class="row">
+    <span class="lbl">Page layout</span>
+    <div class="seg" id="layoutSeg">
+      <button type="button" data-layout="auto" aria-pressed="true">Auto</button>
+      <button type="button" data-layout="single" aria-pressed="false">One page</button>
+      <button type="button" data-layout="spread" aria-pressed="false">Two pages</button>
+    </div>
+  </div>
+  <div class="row">
+    <span class="lbl">Page sound</span>
+    <button class="sw" id="soundBtn" type="button" aria-pressed="true"><span id="soundTxt">On</span><span class="track"></span></button>
+    <div class="pair">
+      <button class="btn" id="soundTest" type="button">Test sound</button>
+      <span class="status" id="soundState" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+  <p class="keys">Arrow keys turn pages. Plus and minus zoom. F opens full screen. Esc leaves it.</p>
+</section>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="inkNavy" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="table" tableValues="0.078 1"/><feFuncG type="table" tableValues="0.188 1"/><feFuncB type="table" tableValues="0.541 1"/></feComponentTransfer></filter>
+    <filter id="inkBlue" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="table" tableValues="0.078 1"/><feFuncG type="table" tableValues="0.337 1"/><feFuncB type="table" tableValues="0.878 1"/></feComponentTransfer></filter>
+    <filter id="inkNavyNight" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="table" tableValues="0 0.56"/><feFuncG type="table" tableValues="0 0.68"/><feFuncB type="table" tableValues="0 1"/></feComponentTransfer></filter>
+    <filter id="inkBlueNight" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="table" tableValues="0 0.45"/><feFuncG type="table" tableValues="0 0.74"/><feFuncB type="table" tableValues="0 1"/></feComponentTransfer></filter>
+  </defs>
+</svg>
+<input type="file" id="picker" accept="application/pdf,.pdf" hidden>
+<div class="drop" id="drop" hidden><span>Drop a PDF to start reading</span></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var WORKER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  var $ = function (id) { return document.getElementById(id); };
+  var els = {
+    stage: $('stage'), frame: $('frame'), file: $('file'), hint: $('hint'),
+    pg: $('pg'), slider: $('slider'), prev: $('prev'), next: $('next'),
+    open: $('openBtn'), picker: $('picker'), drop: $('drop'), toast: $('toast'),
+    sound: $('soundBtn'), soundTxt: $('soundTxt'),
+    rotBtn: $('rotBtn'), rotL: $('rotL'), rotR: $('rotR'), rotRead: $('rotRead'),
+    fs: $('fsBtn'), fsExpand: $('fsExpand'), fsCompress: $('fsCompress'),
+    view: $('viewBtn'), view2: $('viewBtn2'), menu: $('menu'),
+    modeSeg: $('modeSeg'), layoutSeg: $('layoutSeg'),
+    float: $('float'), fpg: $('fpg'), exit: $('exitBtn'),
+    zOut: $('zOut'), zIn: $('zIn'), zRead: $('zRead'), inkSeg: $('inkSeg'),
+    soundTest: $('soundTest'), soundState: $('soundState')
+  };
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var FLIP_MS = reduceMotion ? 350 : 900;
+
+  var mode = 'sample';          // 'sample' | 'pdf'
+  var pdfDoc = null;
+  var count = 0;
+  var baseAspect = 1000 / 1400; // page width / height before the user rotates
+  var aspect = baseAspect;      // after rotation
+  var rot = 0;                  // 0, 90, 180, 270
+  var rotBusy = false;
+  var layoutPref = 'auto';      // 'auto' | 'single' | 'spread'
+  var readMode = 'lamp';
+  var immersive = false;
+  var dragging = false;         // a page is being dragged by hand
+  var zoom = 1;                 // 1 = fit the screen
+  var ink = 'off';              // 'off' | 'navy' | 'blue'
+  var cur = 0;                  // index of the current left page
+  var fileKey = '';
+  var flip = null;
+  var layout = null;
+  var renderW = 0;
+  var gen = 0;
+  var urls = new Map();
+  var sampleOrig = [];
+  var imgs = [];
+  var pending = new Set();
+  var pumping = false;
+  var toastTimer = 0;
+  var floatTimer = 0;
+
+  /* ---------- small helpers ---------- */
+  function lsGet(k) { try { return localStorage.getItem('turnleaf:' + k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem('turnleaf:' + k, v); } catch (e) {} }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function say(msg, sticky) {
+    clearTimeout(toastTimer);
+    els.toast.textContent = msg;
+    els.toast.hidden = false;
+    if (!sticky) toastTimer = setTimeout(function () { els.toast.hidden = true; }, 4200);
+  }
+  function hideToast() { clearTimeout(toastTimer); els.toast.hidden = true; }
+  function curAspect() { return clamp(rot % 180 ? 1 / baseAspect : baseAspect, 0.3, 2.2); }
+  function rotKey() { return 'rot:' + (mode === 'pdf' ? fileKey : 'sample'); }
+  function paintSeg(root, attr, val) {
+    root.querySelectorAll('button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute(attr) === val ? 'true' : 'false');
+    });
+  }
+
+  /* ---------- paper-turn sound (synthesized) ---------- */
+  var actx = null, master = null, analyser = null, soundOn = lsGet('sound') !== 'off';
+  var primed = false, lastTurnAt = 0, soundPlays = 0, soundNote = '';
+
+  function ensureAudio() {
+    if (actx) return actx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+      master = actx.createGain();
+      master.gain.value = 0.9;
+      analyser = actx.createAnalyser();
+      analyser.fftSize = 2048;
+      master.connect(analyser);
+      analyser.connect(actx.destination);
+      actx.onstatechange = function () { paintSoundState(); };
+    } catch (e) { actx = null; }
+    return actx;
+  }
+
+  /* Browsers only start audio after a tap or key press. Every gesture tries to start it,
+     and a silent blip inside the gesture unlocks iPhones and iPads. */
+  function unlockAudio() {
+    if (!ensureAudio()) { paintSoundState(); return; }
+    try {
+      if (actx.state !== 'running') {
+        var p = actx.resume();
+        if (p && p.then) p.then(paintSoundState, paintSoundState);
+      }
+      if (!primed) {
+        var s0 = actx.createBufferSource();
+        s0.buffer = actx.createBuffer(1, 1, 22050);
+        s0.connect(actx.destination);
+        s0.start(0);
+        primed = true;
+      }
+    } catch (e) {}
+    paintSoundState();
+  }
+  ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, unlockAudio, { capture: true, passive: true });
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && actx && actx.state !== 'running' && soundOn) { try { actx.resume(); } catch (e) {} }
+  });
+
+  function paperBuffer(ctx, dur) {
+    var sr = ctx.sampleRate, n = Math.floor(sr * dur);
+    var buf = ctx.createBuffer(1, n, sr), d = buf.getChannelData(0);
+    var c = 0, hold = 0, lp = 0;
+    for (var i = 0; i < n; i++) {
+      var t = i / n;
+      if (--hold <= 0) { c = Math.pow(Math.random(), 1.6); hold = Math.floor(sr * (0.0015 + Math.random() * 0.008)); }
+      var w = Math.random() * 2 - 1;
+      lp += (w - lp) * 0.4;
+      var env = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.7)), 1.4);
+      d[i] = (0.55 * w + 0.45 * lp) * env * (0.2 + 0.8 * c);
+    }
+    return buf;
+  }
+
+  /* One page turn: a rustle that follows the curl, then the page landing on the stack. */
+  function scheduleTurn(ctx, dest, hard, when, flipSec) {
+    var dur = flipSec * 0.92;
+    var src = ctx.createBufferSource();
+    src.buffer = paperBuffer(ctx, dur);
+    src.playbackRate.value = 0.95 + Math.random() * 0.1;
+    var hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = hard ? 320 : 640;
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(7000, when);
+    lp.frequency.exponentialRampToValueAtTime(2600, when + dur);
+    var g = ctx.createGain();
+    g.gain.value = hard ? 0.5 : 0.7;
+    src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(dest);
+    src.start(when);
+
+    var t2 = when + flipSec * (hard ? 0.88 : 0.86);
+    var len = Math.floor(ctx.sampleRate * 0.13);
+    var nb = ctx.createBuffer(1, len, ctx.sampleRate), nd = nb.getChannelData(0);
+    for (var i = 0; i < len; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var ns = ctx.createBufferSource(); ns.buffer = nb;
+    var nlp = ctx.createBiquadFilter(); nlp.type = 'lowpass'; nlp.frequency.value = hard ? 1400 : 2300;
+    var ng = ctx.createGain(); ng.gain.value = hard ? 0.7 : 0.5;
+    ns.connect(nlp); nlp.connect(ng); ng.connect(dest);
+    ns.start(t2);
+
+    if (hard) {
+      var o = ctx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(115, t2);
+      o.frequency.exponentialRampToValueAtTime(45, t2 + 0.18);
+      var og = ctx.createGain();
+      og.gain.setValueAtTime(0.0001, t2);
+      og.gain.exponentialRampToValueAtTime(0.5, t2 + 0.012);
+      og.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.24);
+      o.connect(og); og.connect(dest);
+      o.start(t2); o.stop(t2 + 0.27);
+    }
+  }
+
+  /* Called at the start of every page turn. If the browser has not started audio yet,
+     it waits for the context to resume and then plays, so the first turn is not lost. */
+  function playTurn(hard, secs) {
+    if (!soundOn) return;
+    var t = performance.now();
+    if (t - lastTurnAt < 150) return;
+    lastTurnAt = t;
+    if (!ensureAudio()) { paintSoundState(); return; }
+    var go = function () {
+      try { scheduleTurn(actx, master, hard, actx.currentTime + 0.02, secs || FLIP_MS / 1000); soundPlays++; } catch (e) {}
+      paintSoundState();
+    };
+    if (actx.state === 'running') { go(); return; }
+    var p = actx.resume();
+    if (p && p.then) {
+      p.then(function () { if (actx.state === 'running') go(); else paintSoundState(); }, paintSoundState);
+    }
+  }
+
+  /* Plays a turn and listens to the output with an analyser, so "Working" means a signal was produced. */
+  function selfCheck() {
+    unlockAudio();
+    if (!ensureAudio()) return Promise.resolve({ ok: false, reason: 'unsupported', peak: 0 });
+    return new Promise(function (resolve) {
+      var peak = 0, n = 0, buf = new Float32Array(analyser.fftSize);
+      var start = function () {
+        if (actx.state !== 'running') { resolve({ ok: false, reason: 'blocked', peak: 0 }); return; }
+        scheduleTurn(actx, master, false, actx.currentTime + 0.02, 0.6);
+        var iv = setInterval(function () {
+          analyser.getFloatTimeDomainData(buf);
+          for (var i = 0; i < buf.length; i++) { var v = Math.abs(buf[i]); if (v > peak) peak = v; }
+          if (++n >= 24) {
+            clearInterval(iv);
+            resolve({ ok: peak > 0.005, reason: peak > 0.005 ? 'ok' : 'silent', peak: peak });
+          }
+        }, 40);
+      };
+      if (actx.state === 'running') start();
+      else {
+        var p = actx.resume();
+        if (p && p.then) p.then(start, start); else start();
+      }
+    });
+  }
+
+  function paintSound() {
+    els.sound.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    els.soundTxt.textContent = soundOn ? 'On' : 'Off';
+  }
+  function paintSoundState() {
+    if (!els.soundState) return;
+    var t;
+    if (soundNote) t = soundNote;
+    else if (!soundOn) t = 'Off';
+    else if (!(window.AudioContext || window.webkitAudioContext)) t = 'Not supported here';
+    else if (!actx || actx.state !== 'running') t = 'Starts on your first tap';
+    else t = 'Ready';
+    els.soundState.textContent = t;
+  }
+  els.sound.addEventListener('click', function () {
+    soundOn = !soundOn;
+    lsSet('sound', soundOn ? 'on' : 'off');
+    paintSound();
+    paintSoundState();
+    if (soundOn) { unlockAudio(); playTurn(false); lastTurnAt = 0; }
+  });
+  els.soundTest.addEventListener('click', function () {
+    soundNote = 'Testing…';
+    paintSoundState();
+    selfCheck().then(function (r) {
+      soundNote = r.ok ? 'Working' : r.reason === 'blocked' ? 'Blocked by the browser' : r.reason === 'unsupported' ? 'Not supported here' : 'No signal. Check volume and silent mode';
+      paintSoundState();
+      setTimeout(function () { soundNote = ''; paintSoundState(); }, 4500);
+    });
+  });
+
+  /* read-only hooks so the sound can be checked from outside */
+  window.__turnleaf = {
+    scheduleTurn: scheduleTurn,
+    plays: function () { return soundPlays; },
+    state: function () { return actx ? actx.state : 'none'; },
+    analyser: function () { return analyser; }
+  };
+
+  /* A page dragged by hand has no "flipping" event, so the sound starts when the finger lets go,
+     but only if the page is going to land on the other side. */
+  function dragRelease() {
+    if (!dragging || !flip) return;
+    dragging = false;
+    try {
+      var calc = flip.getFlipController().getCalculation();
+      if (!calc) return;
+      var pos = calc.getPosition();
+      if (pos.x > 0) return;
+      var r = flip.getRender().getRect();
+      var yEnd = calc.getCorner() === 'bottom' ? r.height : 0;
+      var dist = Math.sqrt(Math.pow(pos.x + r.pageWidth, 2) + Math.pow(pos.y - yEnd, 2));
+      els.hint.style.visibility = 'hidden';
+      playTurn(cur === 0 || cur === count - 1, Math.max(0.3, Math.min(dist, 1000) / 1000 * FLIP_MS / 1000));
+    } catch (e) { playTurn(false); }
+  }
+  ['mouseup', 'touchend'].forEach(function (ev) {
+    document.addEventListener(ev, dragRelease, { capture: true, passive: true });
+  });
+
+  /* ---------- reading mode ---------- */
+  var MODES = ['day', 'lamp', 'sepia', 'night'];
+  function setReadMode(m, persist) {
+    if (MODES.indexOf(m) < 0) m = 'lamp';
+    readMode = m;
+    document.documentElement.setAttribute('data-mode', m);
+    if (persist !== false) lsSet('mode', m);
+    paintSeg(els.modeSeg, 'data-mode', m);
+  }
+  els.modeSeg.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button');
+    if (b) setReadMode(b.getAttribute('data-mode'));
+  });
+
+  /* ---------- sample book (drawn on canvas) ---------- */
+  var SERIF = '"Literata", Georgia, "Times New Roman", serif';
+
+  function wrap(ctx, text, maxW) {
+    var words = text.split(' '), lines = [], line = '';
+    for (var i = 0; i < words.length; i++) {
+      var t = line ? line + ' ' + words[i] : words[i];
+      if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = words[i]; } else { line = t; }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+  function spaced(ctx, px) { if ('letterSpacing' in ctx) ctx.letterSpacing = px + 'px'; }
+
+  function paperPage(ctx, W, H) {
+    var g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, '#f3ecda'); g.addColorStop(0.5, '#f8f3e6'); g.addColorStop(1, '#f3ecda');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    for (var i = 0; i < 2400; i++) {
+      ctx.fillStyle = 'rgba(120,95,50,' + (Math.random() * 0.05).toFixed(3) + ')';
+      ctx.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+  }
+  function leatherCover(ctx, W, H) {
+    var g = ctx.createRadialGradient(W * 0.3, H * 0.25, 80, W * 0.5, H * 0.5, H * 0.85);
+    g.addColorStop(0, '#5a3427'); g.addColorStop(1, '#2a1610');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    for (var i = 0; i < 9000; i++) {
+      ctx.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.12).toFixed(3) + ')';
+      ctx.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 3, 1 + Math.random() * 3);
+    }
+    ctx.strokeStyle = 'rgba(214,170,96,0.85)'; ctx.lineWidth = 4; ctx.strokeRect(70, 70, W - 140, H - 140);
+    ctx.lineWidth = 1.5; ctx.strokeRect(92, 92, W - 184, H - 184);
+  }
+
+  var SAMPLE = [
+    { head: 'Before you begin', body: [
+      'Pick a corner of any page and drag it across. The paper bends where your finger bends it, and settles on the other side when you let go.',
+      'You can also tap the outer edge of a page, press the arrow keys, or slide the bar below to jump ahead.',
+      'The view button holds reading modes, page rotation and the sound switch. The full screen button gives the book the whole screen.'
+    ] },
+    { head: 'Bring your own book', body: [
+      'Choose Open PDF, or drop a file anywhere on this window. Pages are drawn as you reach them, so long documents open quickly.',
+      'Nothing is uploaded. The file stays on your device, and where your browser allows it, Turnleaf remembers the page you stopped on.'
+    ] },
+    { head: 'The Lamp at Number Nine', body: [
+      'Marta kept the lamp at Number Nine for thirty-one winters, and in all that time she never once let it go dark. Ships passed far out, small as grains of rice, and none of them ever learned her name.',
+      'On the last night of November a fog came in so thick that the sea disappeared. She climbed the stairs anyway, counting each one, as she always did.'
+    ] },
+    { head: '', body: [
+      'At the top she found the glass already warm. Someone had lit the wick before her, and on the sill sat a cup of tea, still steaming, beside a note written in careful, unfamiliar handwriting.',
+      'It said only: Rest tonight. We have it.'
+    ] },
+    { head: '', body: [
+      'Marta read the note twice. Below the tower the fog moved like slow water, and out in it she could just make out a second light, then a third, small and steady, answering her own.',
+      'She sat down for the first time in thirty-one winters, and watched them come in.'
+    ] },
+    { head: 'Your turn', body: [
+      'That is the end of the sample. Open a PDF to read your own book the same way: textbooks, manuals, novels, reports, anything.'
+    ] }
+  ];
+
+  function canvasToUrl(c) {
+    return new Promise(function (resolve) {
+      c.toBlob(function (b) { resolve(URL.createObjectURL(b)); }, 'image/jpeg', 0.92);
+    });
+  }
+
+  function rotateUrl(src, deg) {
+    return new Promise(function (resolve) {
+      var im = new Image();
+      im.onload = function () {
+        var sideways = deg % 180 !== 0;
+        var c = document.createElement('canvas');
+        c.width = sideways ? im.naturalHeight : im.naturalWidth;
+        c.height = sideways ? im.naturalWidth : im.naturalHeight;
+        var ctx = c.getContext('2d');
+        ctx.translate(c.width / 2, c.height / 2);
+        ctx.rotate(deg * Math.PI / 180);
+        ctx.drawImage(im, -im.naturalWidth / 2, -im.naturalHeight / 2);
+        c.toBlob(function (b) { resolve(URL.createObjectURL(b)); }, 'image/jpeg', 0.92);
+      };
+      im.onerror = function () { resolve(src); };
+      im.src = src;
+    });
+  }
+
+  async function applySampleRotation() {
+    for (var i = 0; i < sampleOrig.length; i++) {
+      var prev = urls.get(i);
+      var u = rot === 0 ? sampleOrig[i] : await rotateUrl(sampleOrig[i], rot);
+      urls.set(i, u);
+      if (prev && prev !== sampleOrig[i] && prev !== u) { try { URL.revokeObjectURL(prev); } catch (e) {} }
+    }
+  }
+
+  async function makeSample() {
+    try {
+      await Promise.race([
+        Promise.all([document.fonts.load('600 40px Literata'), document.fonts.load('400 34px Literata')]),
+        new Promise(function (r) { setTimeout(r, 1800); })
+      ]);
+    } catch (e) {}
+    var W = 1000, H = 1400, total = SAMPLE.length + 2;
+    for (var i = 0; i < total; i++) {
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      var ctx = c.getContext('2d');
+      ctx.textBaseline = 'alphabetic';
+      if (i === 0) {
+        leatherCover(ctx, W, H);
+        ctx.fillStyle = '#e0b66c'; ctx.textAlign = 'center';
+        ctx.font = '600 128px ' + SERIF; ctx.fillText('Turnleaf', W / 2, 640);
+        ctx.fillRect(W / 2 - 120, 700, 240, 3);
+        ctx.fillStyle = '#c9a56b'; ctx.font = '400 36px ' + SERIF;
+        ctx.fillText('a reader that turns like paper', W / 2, 770);
+        ctx.font = '600 22px ' + SERIF; spaced(ctx, 6);
+        ctx.fillText('SAMPLE EDITION', W / 2, H - 170); spaced(ctx, 0);
+      } else if (i === total - 1) {
+        leatherCover(ctx, W, H);
+        ctx.fillStyle = '#c9a56b'; ctx.textAlign = 'center'; ctx.font = '400 34px ' + SERIF;
+        ctx.fillText('Open a PDF to begin your own.', W / 2, H / 2);
+      } else {
+        var p = SAMPLE[i - 1];
+        paperPage(ctx, W, H);
+        ctx.textAlign = 'left'; ctx.fillStyle = '#8b7d62'; ctx.font = '600 20px ' + SERIF; spaced(ctx, 5);
+        ctx.fillText('TURNLEAF', 120, 96); spaced(ctx, 0);
+        var y = 250;
+        if (p.head) {
+          ctx.fillStyle = '#2b2218'; ctx.font = '600 56px ' + SERIF;
+          var hl = wrap(ctx, p.head, W - 240);
+          for (var h = 0; h < hl.length; h++) { ctx.fillText(hl[h], 120, y); y += 70; }
+          ctx.fillStyle = 'rgba(120,95,50,0.5)'; ctx.fillRect(120, y - 34, 90, 2);
+          y += 40;
+        } else { y = 230; }
+        ctx.fillStyle = '#2f261b'; ctx.font = '400 35px ' + SERIF;
+        for (var b = 0; b < p.body.length; b++) {
+          var lines = wrap(ctx, p.body[b], W - 240);
+          for (var l = 0; l < lines.length; l++) { ctx.fillText(lines[l], 120, y); y += 60; }
+          y += 26;
+        }
+        ctx.fillStyle = '#8b7d62'; ctx.font = '400 24px ' + SERIF;
+        ctx.textAlign = (i % 2 === 1) ? 'left' : 'right';
+        ctx.fillText(String(i + 1), (i % 2 === 1) ? 120 : W - 120, H - 80);
+      }
+      var u = await canvasToUrl(c);
+      urls.set(i, u);
+      sampleOrig[i] = u;
+    }
+    count = total; baseAspect = W / H; mode = 'sample'; cur = 0;
+    var saved = parseInt(lsGet('rot:sample') || '0', 10);
+    rot = [0, 90, 180, 270].indexOf(saved) >= 0 ? saved : 0;
+    if (rot) await applySampleRotation();
+    aspect = curAspect();
+  }
+
+  /* ---------- PDF page rendering (lazy, nearest first) ---------- */
+  function resetCache() {
+    gen++;
+    pending.clear();
+    urls.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (e) {} });
+    urls.clear();
+  }
+
+  async function renderPdfPage(i, g) {
+    var page = await pdfDoc.getPage(i + 1);
+    if (g !== gen) return;
+    var rotation = ((page.rotate || 0) + rot) % 360;
+    var base = page.getViewport({ scale: 1, rotation: rotation });
+    var vp = page.getViewport({ scale: renderW / base.width, rotation: rotation });
+    var c = document.createElement('canvas');
+    c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    var ctx = c.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    if (g !== gen) return;
+    var blob = await new Promise(function (r) { c.toBlob(r, 'image/jpeg', 0.9); });
+    if (g !== gen) return;
+    var u = URL.createObjectURL(blob);
+    urls.set(i, u);
+    var im = imgs[i];
+    if (im) { im.src = u; im.parentNode.classList.add('ready'); }
+    try { page.cleanup(); } catch (e) {}
+  }
+
+  function evictFar() {
+    if (mode !== 'pdf' || urls.size <= 48) return;
+    Array.from(urls.keys()).forEach(function (k) {
+      if (Math.abs(k - cur) > 22) {
+        try { URL.revokeObjectURL(urls.get(k)); } catch (e) {}
+        urls.delete(k);
+        var im = imgs[k];
+        if (im) { im.removeAttribute('src'); im.parentNode.classList.remove('ready'); }
+      }
+    });
+  }
+
+  async function pump() {
+    if (pumping) return;
+    pumping = true;
+    var g = gen;
+    try {
+      while (pending.size && g === gen) {
+        var best = -1, bd = 1e9;
+        pending.forEach(function (i) { var d = Math.abs(i - cur - 0.5); if (d < bd) { bd = d; best = i; } });
+        pending.delete(best);
+        if (urls.has(best)) continue;
+        try { await renderPdfPage(best, g); } catch (e) { if (window.console) console.warn('Page render failed', best + 1, e); }
+        evictFar();
+      }
+    } finally {
+      pumping = false;
+      if (pending.size) setTimeout(pump, 0);
+    }
+  }
+
+  function wantAround() {
+    if (mode !== 'pdf') return;
+    [0, 1, -1, 2, -2, 3, 4, -3, 5, 6].forEach(function (d) {
+      var i = cur + d;
+      if (i >= 0 && i < count && !urls.has(i)) pending.add(i);
+    });
+    pump();
+  }
+
+  /* ---------- the book ---------- */
+  function computeLayout() {
+    var pad = immersive ? 10 : 24;
+    var availW = Math.max(120, els.stage.clientWidth - pad);
+    var availH = Math.max(160, els.stage.clientHeight - pad);
+    var hSingle = Math.min(availH, availW / aspect);
+    var hSpread = Math.min(availH, availW / (2 * aspect));
+    var spread;
+    if (layoutPref === 'single') spread = false;
+    else if (layoutPref === 'spread') spread = count > 1;
+    else spread = count > 1 && hSpread >= hSingle * 0.7;
+    var h = Math.floor((spread ? hSpread : hSingle) * zoom);
+    var w = Math.floor(h * aspect * (spread ? 2 : 1));
+    var pageCss = spread ? w / 2 : w;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return { spread: spread, w: w, h: h, renderW: clamp(Math.round(pageCss * dpr * 1.3), 700, 2600) };
+  }
+
+  function applyLayout(force) {
+    var L = computeLayout();
+    if (!force && layout && layout.spread === L.spread && Math.abs(layout.h - L.h) < 3) return;
+    layout = L;
+    if (mode === 'pdf') {
+      if (renderW === 0) renderW = L.renderW;
+      else if (L.renderW > renderW * 1.25) { resetCache(); renderW = L.renderW; }
+    }
+    buildBook(cur);
+  }
+
+  function labelFor(idx) {
+    var spread = flip && flip.getOrientation && flip.getOrientation() === 'landscape';
+    if (spread && idx > 0 && idx + 1 < count) return 'Pages ' + (idx + 1) + '–' + (idx + 2) + ' of ' + count;
+    return 'Page ' + (idx + 1) + ' of ' + count;
+  }
+
+  function onPage() {
+    var lbl = labelFor(cur);
+    els.pg.textContent = lbl;
+    els.fpg.textContent = lbl;
+    els.slider.max = String(count);
+    els.slider.value = String(cur + 1);
+    if (mode === 'pdf') lsSet('pos:' + fileKey, String(cur));
+    wantAround();
+  }
+
+  function buildBook(startIdx) {
+    if (flip) { try { flip.destroy(); } catch (e) {} flip = null; }
+    var book = document.createElement('div');
+    book.className = 'book';
+    els.frame.replaceChildren(book);
+    els.frame.style.width = layout.w + 'px';
+    els.frame.style.height = layout.h + 'px';
+    imgs = [];
+
+    for (var i = 0; i < count; i++) {
+      var pg = document.createElement('div');
+      pg.className = 'page';
+      pg.setAttribute('data-n', String(i + 1));
+      if (count > 2 && (i === 0 || i === count - 1)) pg.setAttribute('data-density', 'hard');
+      if (mode === 'sample' && (i === 0 || i === count - 1)) pg.classList.add('cover');
+      var im = document.createElement('img');
+      im.className = 'pimg'; im.alt = 'Page ' + (i + 1); im.draggable = false;
+      pg.appendChild(im);
+      book.appendChild(pg);
+      imgs[i] = im;
+      if (urls.has(i)) { im.src = urls.get(i); pg.classList.add('ready'); }
+    }
+
+    if (!window.St || !window.St.PageFlip) {
+      say('The page-turn engine did not load. Check your connection and reload.', true);
+      return;
+    }
+    cur = clamp(startIdx, 0, Math.max(0, count - 1));
+    flip = new window.St.PageFlip(book, {
+      width: Math.round(aspect * 1000), height: 1000,
+      size: 'stretch',
+      minWidth: layout.spread ? 1 : layout.w + 1,
+      maxWidth: 4000, minHeight: 1, maxHeight: 4000,
+      showCover: count > 2,
+      drawShadow: true, maxShadowOpacity: 0.55,
+      flippingTime: FLIP_MS,
+      usePortrait: true,
+      startPage: cur,
+      startZIndex: 0,
+      autoSize: true,
+      mobileScrollSupport: false,
+      swipeDistance: 20,
+      showPageCorners: !reduceMotion,
+      clickEventForward: true,
+      useMouseEvents: zoom <= 1
+    });
+    flip.loadFromHTML(book.querySelectorAll('.page'));
+    flip.on('flip', function (e) { cur = e.data; onPage(); });
+    flip.on('changeState', function (e) {
+      dragging = e.data === 'user_fold';
+      if (e.data === 'flipping') {
+        els.hint.style.visibility = 'hidden';
+        playTurn(cur === 0 || cur === count - 1);
+      }
+    });
+    onPage();
+  }
+
+  /* ---------- rotate ---------- */
+  function paintRot() { els.rotRead.textContent = rot + '°'; }
+
+  var rotQueue = 0;
+  async function rotateBy(delta) {
+    rotQueue += delta;
+    if (rotBusy) return;
+    rotBusy = true;
+    try {
+      while (rotQueue !== 0) {
+        var d = rotQueue; rotQueue = 0;
+        rot = (((rot + d) % 360) + 360) % 360;
+        lsSet(rotKey(), String(rot));
+        paintRot();
+        if (mode === 'pdf') {
+          resetCache();
+          renderW = 0;
+        } else {
+          await applySampleRotation();
+        }
+        aspect = curAspect();
+        applyLayout(true);
+      }
+    } finally { rotBusy = false; }
+  }
+  els.rotBtn.addEventListener('click', function () { rotateBy(90); });
+  els.rotR.addEventListener('click', function () { rotateBy(90); });
+  els.rotL.addEventListener('click', function () { rotateBy(-90); });
+
+  /* ---------- page layout preference ---------- */
+  els.layoutSeg.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button');
+    if (!b) return;
+    layoutPref = b.getAttribute('data-layout');
+    lsSet('layout', layoutPref);
+    paintSeg(els.layoutSeg, 'data-layout', layoutPref);
+    applyLayout(true);
+  });
+
+  /* ---------- opening a PDF ---------- */
+  async function openFile(file) {
+    if (!file) return;
+    if (!(file.type === 'application/pdf' || /\.pdf$/i.test(file.name))) { say('That file is not a PDF.'); return; }
+    if (!window.pdfjsLib) { say('The PDF engine did not load. Check your connection and reload.'); return; }
+    say('Opening ' + file.name + '…', true);
+    try {
+      var data = new Uint8Array(await file.arrayBuffer());
+      var docOpts = { data: data };
+      if (window.TURNLEAF_APP) { docOpts.cMapUrl = 'vendor/cmaps/'; docOpts.cMapPacked = true; docOpts.standardFontDataUrl = 'vendor/standard_fonts/'; }
+      var doc = await window.pdfjsLib.getDocument(docOpts).promise;
+      var first = await doc.getPage(1);
+      var vp = first.getViewport({ scale: 1 });
+      resetCache();
+      sampleOrig.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (e) {} });
+      sampleOrig = [];
+      if (pdfDoc) { try { pdfDoc.destroy(); } catch (e) {} }
+      pdfDoc = doc; mode = 'pdf'; count = doc.numPages;
+      baseAspect = vp.width / vp.height;
+      fileKey = file.name + ':' + file.size + ':' + count;
+      var savedRot = parseInt(lsGet('rot:' + fileKey) || '0', 10);
+      rot = [0, 90, 180, 270].indexOf(savedRot) >= 0 ? savedRot : 0;
+      aspect = curAspect();
+      paintRot();
+      zoom = 1; syncZoomUi();
+      var saved = parseInt(lsGet('pos:' + fileKey) || '0', 10) || 0;
+      cur = saved >= 0 && saved < count ? saved : 0;
+      renderW = 0;
+      els.file.textContent = file.name; els.file.title = file.name;
+      els.hint.style.visibility = 'visible';
+      applyLayout(true);
+      hideToast();
+    } catch (err) {
+      if (window.console) console.warn(err);
+      say(err && err.name === 'PasswordException'
+        ? 'This PDF is password protected. Remove the password and try again.'
+        : 'Could not read this PDF. Try another file.');
+    }
+  }
+
+  els.open.addEventListener('click', function () { els.picker.click(); });
+  els.picker.addEventListener('change', function () {
+    var f = els.picker.files && els.picker.files[0];
+    els.picker.value = '';
+    openFile(f);
+  });
+
+  var dragDepth = 0;
+  function hasFiles(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') !== -1; }
+  window.addEventListener('dragenter', function (e) { if (hasFiles(e)) { dragDepth++; els.drop.hidden = false; } });
+  window.addEventListener('dragleave', function (e) { if (hasFiles(e)) { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) els.drop.hidden = true; } });
+  window.addEventListener('dragover', function (e) { if (hasFiles(e)) e.preventDefault(); });
+  window.addEventListener('drop', function (e) {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); dragDepth = 0; els.drop.hidden = true;
+    openFile(e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+
+  /* ---------- view menu ---------- */
+  function openMenu() {
+    els.menu.hidden = false;
+    els.view.setAttribute('aria-expanded', 'true');
+    els.view2.setAttribute('aria-expanded', 'true');
+    pingFloat();
+  }
+  function closeMenu() {
+    els.menu.hidden = true;
+    els.view.setAttribute('aria-expanded', 'false');
+    els.view2.setAttribute('aria-expanded', 'false');
+  }
+  function toggleMenu() { if (els.menu.hidden) openMenu(); else closeMenu(); }
+  els.view.addEventListener('click', toggleMenu);
+  els.view2.addEventListener('click', toggleMenu);
+  document.addEventListener('pointerdown', function (e) {
+    if (els.menu.hidden) return;
+    var t = e.target;
+    if (els.menu.contains(t) || els.view.contains(t) || els.view2.contains(t)) return;
+    closeMenu();
+  }, true);
+
+  /* ---------- full screen (fills the screen in portrait and landscape) ---------- */
+  function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  function requestFs() {
+    var el = document.documentElement;
+    var f = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!f) return Promise.reject(new Error('unsupported'));
+    try { var p = f.call(el); return p && p.then ? p : Promise.resolve(); } catch (e) { return Promise.reject(e); }
+  }
+  function leaveFs() {
+    var f = document.exitFullscreen || document.webkitExitFullscreen;
+    try { var p = f && f.call(document); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  }
+  function pingFloat() {
+    if (!immersive) return;
+    els.float.classList.remove('idle');
+    clearTimeout(floatTimer);
+    floatTimer = setTimeout(function () {
+      if (els.menu.hidden) els.float.classList.add('idle');
+    }, 2600);
+  }
+  function relayout() {
+    requestAnimationFrame(function () { applyLayout(false); });
+    setTimeout(function () { applyLayout(false); }, 350);
+  }
+  function setImmersive(on) {
+    immersive = !!on;
+    if (immersive) document.documentElement.setAttribute('data-immersive', '');
+    else document.documentElement.removeAttribute('data-immersive');
+    els.float.hidden = !immersive;
+    nativeBars(immersive);
+    els.fsExpand.hidden = immersive;
+    els.fsCompress.hidden = !immersive;
+    els.fs.setAttribute('aria-label', immersive ? 'Exit full screen' : 'Full screen');
+    closeMenu();
+    if (immersive) pingFloat();
+    relayout();
+  }
+  function nativeBars(hide) {
+    try {
+      var C = window.Capacitor, SB = C && C.Plugins && C.Plugins.StatusBar;
+      if (!SB) return;
+      var r = hide ? SB.hide() : SB.show();
+      if (r && r.catch) r.catch(function () {});
+    } catch (e) {}
+  }
+  function enterFull() { setImmersive(true); requestFs().catch(function () {}); }
+  function exitFull() { setImmersive(false); if (fsEl()) leaveFs(); }
+  function toggleFull() { if (immersive) exitFull(); else enterFull(); }
+  els.fs.addEventListener('click', toggleFull);
+  els.exit.addEventListener('click', exitFull);
+  function onFsChange() { if (!fsEl() && immersive) setImmersive(false); }
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+  ['pointermove', 'pointerdown', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, pingFloat, { passive: true });
+  });
+  window.addEventListener('orientationchange', function () { relayout(); });
+
+  /* ---------- text color ---------- */
+  var INKS = ['off', 'navy', 'blue'];
+  function setInk(v, persist) {
+    if (INKS.indexOf(v) < 0) v = 'off';
+    ink = v;
+    if (v === 'off') document.documentElement.removeAttribute('data-ink');
+    else document.documentElement.setAttribute('data-ink', v);
+    if (persist !== false) lsSet('ink', v);
+    paintSeg(els.inkSeg, 'data-ink', v);
+  }
+  els.inkSeg.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button');
+    if (b) setInk(b.getAttribute('data-ink'));
+  });
+
+  /* ---------- zoom ---------- */
+  var ZOOMS = [1, 1.25, 1.5, 2, 2.5, 3];
+  var HINT = els.hint.textContent;
+  function syncZoomUi() {
+    if (zoom > 1) document.documentElement.setAttribute('data-zoomed', '');
+    else document.documentElement.removeAttribute('data-zoomed');
+    els.zRead.textContent = Math.round(zoom * 100) + '%';
+    els.zOut.disabled = zoom <= ZOOMS[0];
+    els.zIn.disabled = zoom >= ZOOMS[ZOOMS.length - 1];
+    els.hint.textContent = zoom > 1 ? 'Zoomed in. Drag to move around. Use the arrow keys or buttons to turn pages.' : HINT;
+  }
+  function setZoom(z) {
+    z = ZOOMS.reduce(function (a, b) { return Math.abs(b - z) < Math.abs(a - z) ? b : a; });
+    if (z === zoom) return;
+    zoom = z;
+    syncZoomUi();
+    applyLayout(true);
+    requestAnimationFrame(function () {
+      var st = els.stage;
+      st.scrollLeft = (st.scrollWidth - st.clientWidth) / 2;
+      st.scrollTop = (st.scrollHeight - st.clientHeight) / 2;
+    });
+  }
+  function stepZoom(d) { setZoom(ZOOMS[clamp(ZOOMS.indexOf(zoom) + d, 0, ZOOMS.length - 1)]); }
+  els.zIn.addEventListener('click', function () { stepZoom(1); });
+  els.zOut.addEventListener('click', function () { stepZoom(-1); });
+  els.zRead.addEventListener('click', function () { setZoom(1); });
+
+  var wheelAt = 0;
+  els.stage.addEventListener('wheel', function (e) {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    var t = Date.now();
+    if (t - wheelAt < 220) return;
+    wheelAt = t;
+    stepZoom(e.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+
+  var pan = null;
+  els.stage.addEventListener('pointerdown', function (e) {
+    if (zoom <= 1 || e.pointerType !== 'mouse' || e.button !== 0) return;
+    pan = { x: e.clientX, y: e.clientY, l: els.stage.scrollLeft, t: els.stage.scrollTop };
+    els.stage.classList.add('panning');
+    try { els.stage.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  els.stage.addEventListener('pointermove', function (e) {
+    if (!pan) return;
+    els.stage.scrollLeft = pan.l - (e.clientX - pan.x);
+    els.stage.scrollTop = pan.t - (e.clientY - pan.y);
+  });
+  function endPan() { pan = null; els.stage.classList.remove('panning'); }
+  els.stage.addEventListener('pointerup', endPan);
+  els.stage.addEventListener('pointercancel', endPan);
+
+  /* ---------- page controls ---------- */
+  els.prev.addEventListener('click', function () { if (flip) flip.flipPrev('bottom'); });
+  els.next.addEventListener('click', function () { if (flip) flip.flipNext('bottom'); });
+  els.slider.addEventListener('input', function () { els.pg.textContent = 'Page ' + els.slider.value + ' of ' + count; });
+  els.slider.addEventListener('change', function () {
+    if (!flip) return;
+    var t = clamp(parseInt(els.slider.value, 10) - 1, 0, count - 1);
+    if (t !== cur) flip.flip(t, 'bottom');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'Escape') {
+      if (!els.menu.hidden) closeMenu();
+      else if (immersive) exitFull();
+      return;
+    }
+    if (k === '+' || k === '=') { e.preventDefault(); stepZoom(1); return; }
+    if (k === '-' || k === '_') { e.preventDefault(); stepZoom(-1); return; }
+    if (k === '0') { e.preventDefault(); setZoom(1); return; }
+    if (e.target === els.slider) return;
+    if (k === 'f' || k === 'F') { e.preventDefault(); toggleFull(); return; }
+    if (!flip) return;
+    if (k === 'ArrowRight' || k === 'PageDown') { e.preventDefault(); flip.flipNext('bottom'); }
+    else if (k === 'ArrowLeft' || k === 'PageUp') { e.preventDefault(); flip.flipPrev('bottom'); }
+    else if (k === 'Home') { e.preventDefault(); flip.flip(0, 'bottom'); }
+    else if (k === 'End') { e.preventDefault(); flip.flip(count - 1, 'bottom'); }
+  });
+
+  var resizeTimer = 0;
+  function onResize() { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { applyLayout(false); }, 180); }
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(els.stage);
+  else window.addEventListener('resize', onResize);
+
+  /* ---------- start ---------- */
+  setInk(lsGet('ink') || 'off', false);
+  syncZoomUi();
+  var savedLayout = lsGet('layout');
+  if (savedLayout === 'single' || savedLayout === 'spread') layoutPref = savedLayout;
+  paintSeg(els.layoutSeg, 'data-layout', layoutPref);
+  paintSound();
+  setReadMode(document.documentElement.getAttribute('data-mode') || 'lamp', false);
+  paintSoundState();
+  if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
+  makeSample().then(function () {
+    els.file.textContent = 'Sample book';
+    paintRot();
+    applyLayout(true);
+  });
+})();
+</script>
